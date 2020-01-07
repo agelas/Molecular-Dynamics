@@ -1,4 +1,4 @@
-%Project E code by Mathias Insley
+%Molecular Dynamics
 classdef md < handle
     properties
         N;          %number of atoms
@@ -162,23 +162,35 @@ classdef md < handle
         function [k,p,e]=draw(obj)
             subplot(2,1,1);
             
+            [Xv, Yv, Zv] = sphere;
+            
+            Xv = Xv*0.5;
+            Yv = Yv*0.5;
+            Zv = Zv*0.5;
+            
             counter=1;
-            while obj.t<2
+            while obj.t<1
                 subplot(2,1,1);
 
                 obj.step;
                 if counter==1
-                    for i=1:obj.N %converting points to rounded rectangles
-                        obj.phand(i)=rectangle('Position', [obj.pos(i,1)-0.5 obj.pos(i,2)-0.5 1 1],'Curvature',[1 1],'FaceColor','r','EdgeColor','k');  
+                    for i=1:obj.N %converting points to rounded rectangle
+                        surf(Xv, Yv, Zv);
+                        obj.phand(i)=surf(Xv + obj.pos(i,1)-0.5,Yv + obj.pos(i,2)-0.5, Zv);
+                        set(obj.phand(i),'facecolor','r','edgecolor','none');
                     end
                 else
                     for i=1:obj.N %changing position of rectangles on every iteration
-                        set(obj.phand(i),'Position', [obj.pos(i,1)-0.5 obj.pos(i,2)-0.5 1 1]); 
+                        obj.phand(i)=surf(Xv + obj.pos(i,1)-0.5,Yv + obj.pos(i,2)-0.5, Zv);
+                        set(obj.phand(i),'facecolor','r','edgecolor','none','facelighting','phong');
                     end
                 end
                 counter=counter+1;
-                xlim([0 7]);    %setting dimensions of display
-                ylim([0 7]);    %setting dimensions of display
+                xlim([0 7]);    %setting dimensions of display x
+                ylim([0 7]);    %setting dimensions of display y
+                zlim([-2 2]);   %setting dimensions of display z
+                v = [-7 -4 7];
+                view(v);
                     
                 subplot(2,1,2)
 
