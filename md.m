@@ -171,20 +171,21 @@ classdef md < handle
             counter=1;
             while obj.t<1
                 subplot(2,1,1);
-
+                hold on
                 obj.step;
                 if counter==1
-                    for i=1:obj.N %converting points to rounded rectangle
+                    for i=1:obj.N %converting points to spheres
                         surf(Xv, Yv, Zv);
-                        obj.phand(i)=surf(Xv + obj.pos(i,1)-0.5,Yv + obj.pos(i,2)-0.5, Zv);
-                        set(obj.phand(i),'facecolor','r','edgecolor','none');
+                        obj.phand(i)=surf(Xv + obj.pos(i,1)-0.5,Yv + obj.pos(i,2)-0.5, Zv); %handle to sphere objects
+                        set(obj.phand(i),'facecolor','r','edgecolor','none','facelighting', 'phong');
                     end
                 else
-                    for i=1:obj.N %changing position of rectangles on every iteration
-                        obj.phand(i)=surf(Xv + obj.pos(i,1)-0.5,Yv + obj.pos(i,2)-0.5, Zv);
-                        set(obj.phand(i),'facecolor','r','edgecolor','none','facelighting','phong');
+                    for i=1:obj.N %changing position of spheres on every iteration
+                        set(obj.phand(i), 'XData', Xv+obj.pos(i,1)-0.5, 'YData', Yv+obj.pos(i,2)-0.5,...
+                            'facecolor', 'r', 'edgecolor', 'none', 'facelighting', 'phong');
                     end
                 end
+                hold off        %Needs to be off so energy plots can be edited
                 counter=counter+1;
                 xlim([0 7]);    %setting dimensions of display x
                 ylim([0 7]);    %setting dimensions of display y
