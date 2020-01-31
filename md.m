@@ -15,8 +15,7 @@ classdef md < handle
         Eser;       %the energy per atom 
         KEser;      %the kinetic energy per atom
         PEser;      %potential energy per atom
-        KEfix;      %logical flag if kinetic energy is fixed
-        KEset;      %kinetic energy being fixed to 
+        KEfix;      %logical flag if kinetic energy is fixed 
     end
     
     methods
