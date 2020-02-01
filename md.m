@@ -26,12 +26,13 @@ classdef md < handle
             avg=KE*2;
             obj.t=0;
             obj.dt=0.01;                        %setting the time step
-            [posx,posy]=meshgrid([1:6],[1:6]);  %meshgrid for atom indices
-            posx=reshape(posx,1,36);            %reformatting x positions 
-            posy=reshape(posy,1,36);            %reformatting y positions
-            obj.pos=[posx',posy'];              %filling in pos array
+            [posx,posy,posz]=meshgrid(1:6,1:6,1:6);  %meshgrid for atom indices
+            posx=reshape(posx,1,216);            %reformatting x positions 
+            posy=reshape(posy,1,216);            %reformatting y positions
+            posz=reshape(posz,1,216);            %reformatting z positions
+            obj.pos=[posx',posy',posz'];              %filling in pos array
             obj.pos=obj.pos-0.5;                %shifting indexes to not fall on whole numbers
-            obj.vel=randn(obj.N,2)*sqrt(avg);   %distributing random velocities across the atoms
+            obj.vel=randn(obj.N,3)*sqrt(avg);   %distributing random velocities across the atoms
             
         end
         
@@ -42,66 +43,83 @@ classdef md < handle
                 
                 obj.pos(i,1)=obj.pos(i,1)+obj.dt*obj.vel(i,1);  %updating x coordinate
                 obj.pos(i,2)=obj.pos(i,2)+obj.dt*obj.vel(i,2);  %updating y coordinate
+                obj.pos(i,3)=obj.pos(i,3)+obj.dt*obj.vel(i,3);
                 
                 rij=0;  %radius to atoms within boundary contributing to force
                 rijx=0; %x-distance to atoms within boundary
                 rijy=0; %y-distance to atoms within boundary
+                rijz=0; %z-distance to atoms within boundary
                 
                 Fix=0;
                 Fiy=0;
+                Fiz=0;
                 
                 potentialEnormal=0; %potential energy from within boundaries
                 
-                if obj.pos(i,1)<0   %Checking boundary conditions
+                if obj.pos(i,1)<0   %Checking x lower boundary conditions
                     obj.pos(i,1)=obj.pos(i,1)+obj.L;
                 end
                 
-                if obj.pos(i,2)<0   %Checking boundary conditions
+                if obj.pos(i,2)<0   %Checking y lower boundary conditions
                     obj.pos(i,2)=obj.pos(i,2)+obj.L;
                 end
+                
+                if obj.pos(i,3)<0   %Checking z lower boundary conditions
+                    obj.pos(i,3)=obj.pos(i,3)+obj.L;
+                end
 
-                if obj.pos(i,1)>6   %Checking boundary conditions
+                if obj.pos(i,1)>6   %Checking x upper boundary conditions
                     obj.pos(i,1)=obj.pos(i,1)-obj.L;
                 end
 
-                if obj.pos(i,2)>6   %Checking boundary conditions
+                if obj.pos(i,2)>6   %Checking y upper boundary conditions
                     obj.pos(i,2)=obj.pos(i,2)-obj.L;
+                end
+                
+                if obj.pos(i,3)>6   %Checking z upper boundary conditions
+                    obj.pos(i,3)=obj.pos(i,3)-obj.L;
                 end
                 
                 for j=1:obj.N %Looping through all other points for distance calcs
                        
                     rijx(j)= obj.pos(j,1)-obj.pos(i,1); %x distance is recorded
                     rijy(j)= obj.pos(j,2)-obj.pos(i,2); %y distance is recorded
+                    rijz(j)= obj.pos(j,3)-obj.pos(i,3); %z distance is recorded
                     
                     
                     if rijx(j)>obj.L/2  %past boundary forces
-                        rijx(j)=rijx(j)-obj.L;
-                    
-                    
+                        rijx(j)=rijx(j)-obj.L;                 
                     elseif rijx(j)<-obj.L/2  %past boundary force
                         rijx(j)=rijx(j)+obj.L; 
                     end
                     
                     if rijy(j)>obj.L/2  %past boundary forces
-                        rijy(j)=rijy(j)-obj.L; 
-                    
+                        rijy(j)=rijy(j)-obj.L;                     
                     elseif rijy(j)<-obj.L/2  %past boundary forces
                         rijy(j)=rijy(j)+obj.L;
                     end
+                    
+                    if rijz(j)>obj.L/2
+                        rijz(j)=rijz(j)-obj.L;
+                    elseif rijz(j)<-obj.L/2
+                        rijz(j)=rijz(j)+obj.L;
+                    end
                      
                     
-                    if sqrt((rijx(j))^2+(rijy(j)^2))<=obj.rc   %Checking if distance is within 2.5
-                        rij(j)=sqrt((rijx(j))^2+(rijy(j)^2));  %If within range, distance is recorded 
+                    if sqrt((rijx(j))^2+(rijy(j)^2)+(rijz(j)^2))<=obj.rc   %Checking if distance is within 2.5
+                        rij(j)=sqrt((rijx(j))^2+(rijy(j)^2)+rijz(j)^2);  %If within range, distance is recorded 
                     else
-                        rij(j)=0;
+                        rij(j)=0; %Distance ignored if out of range
                     end
                     
                     if rij(j)==0    %if radius is 0, x and y distances are set to 0 to discard atom
                         Fix(j)=0;
                         Fiy(j)=0;
+                        Fiz(j)=0;
                     else
                         Fix(j)=24*((2*rij(j))^-14-(rij(j))^-8)*rijx(j); %Potential energy calculation in x
                         Fiy(j)=24*((2*rij(j))^-14-(rij(j))^-8)*rijy(j); %Potential energy calculation in y
+                        Fiz(j)=24*((2*rij(j))^-14-(rij(j))^-8)*rijz(j);
                     end    
                 end
                 
@@ -118,29 +136,34 @@ classdef md < handle
 
                 Fix=sum(Fix);   %summing all the x forces
                 Fiy=sum(Fiy);   %summing all the y forces
+                Fiz=sum(Fiz);   %summing all the z forces
 
                 obj.vel(i,1)=obj.vel(i,1)+obj.dt*Fix;   %updating x velocity
                 obj.vel(i,2)=obj.vel(i,2)+obj.dt*Fiy;   %updating y velocity
+                obj.vel(i,3)=obj.vel(i,3)+obj.dt*Fiz;
                 
                 velXavg=mean(obj.vel(:,1));             %Calculating average velocity in x
                 velYavg=mean(obj.vel(:,2));             %Calculating average veloctiy in y
+                velZang=mean(obj.vel(:,3));             %Calculating average velocity in z
                 
                 if obj.KEfix==1                         %KEfix
                     for i=1:obj.N
                         obj.vel(i,1)=(obj.vel(i,1)-velXavg)*(1/(sqrt(obj.vel(i,1)^2+obj.vel(i,2)^2)));
                         obj.vel(i,2)=(obj.vel(i,2)-velYavg)*(1/(sqrt(obj.vel(i,1)^2+obj.vel(i,2)^2)));
+                        obj.vel(i,3)=(obj.vel(i,3)-velZavg)*(1/(sqrt(obj.vel(i,3)^2+obj.vel(i,3)^2)));
                     end
                 end
 
                 obj.pos(i,1)=obj.pos(i,1)+obj.dt*obj.vel(i,1);  %updating x coordinate
                 obj.pos(i,2)=obj.pos(i,2)+obj.dt*obj.vel(i,2);  %updating y coordinate
+                obj.pos(i,3)=obj.pos(i,3)+obj.dt*obj.vel(i,3);  %updating z coordinate
                 
             end
             velocitySecond=obj.vel; %second velocity to hold updated velocity for kinetic evergy calculations
             
-            velocityMean=(velocityFirst+velocitySecond)./2; %taking the mean of the velocities
+            velocityMean=(velocityFirst+velocitySecond)./3; %taking the mean of the velocities
             
-            netVelocity=sqrt(velocityMean(:,1).^2+velocityMean(:,2).^2);   %taking the net velocity 
+            netVelocity=sqrt(velocityMean(:,1).^2+velocityMean(:,2).^2+velocityMean(:,3).^2);   %taking the net velocity 
             
             KE=0.5.*(netVelocity.^2);   %calculatingn KE accoring to 0.5mv^2
             KE=KE';                     %transposing KE so it adds properly
@@ -158,7 +181,7 @@ classdef md < handle
         end
     
     
-        function [k,p,e]=draw(obj)
+        function draw(obj)
             subplot(2,1,1);
             
             [Xv, Yv, Zv] = sphere;
@@ -175,22 +198,25 @@ classdef md < handle
                 if counter==1
                     for i=1:obj.N %converting points to spheres
                         surf(Xv, Yv, Zv);
-                        obj.phand(i)=surf(Xv + obj.pos(i,1)-0.5,Yv + obj.pos(i,2)-0.5, Zv); %handle to sphere objects
+                        obj.phand(i)=surf(Xv + obj.pos(i,1)-0.5,Yv + obj.pos(i,2)-0.5, Zv + obj.pos(i,3)-0.5); %handle to sphere objects
                         set(obj.phand(i),'facecolor','r','edgecolor','none','facelighting', 'phong');
                     end
                 else
                     for i=1:obj.N %changing position of spheres on every iteration
                         set(obj.phand(i), 'XData', Xv+obj.pos(i,1)-0.5, 'YData', Yv+obj.pos(i,2)-0.5,...
-                            'facecolor', 'r', 'edgecolor', 'none', 'facelighting', 'phong');
+                            'ZData', Zv+obj.pos(i,3)-0.5,'facecolor', 'r', 'edgecolor', 'none', 'facelighting', 'phong');
                     end
                 end
                 hold off        %Needs to be off so energy plots can be edited
                 counter=counter+1;
                 xlim([0 7]);    %setting dimensions of display x
                 ylim([0 7]);    %setting dimensions of display y
-                zlim([-2 2]);   %setting dimensions of display z
-                v = [-7 -4 7];
-                view(v);
+                zlim([0 7]);   %setting dimensions of display z
+                %v = [-7 -4 7];
+                xlabel('X')
+                ylabel('Y')
+                zlabel('Z')
+                view([-37.5,60]);
                     
                 subplot(2,1,2)
 
