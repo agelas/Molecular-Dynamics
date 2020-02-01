@@ -1,3 +1,11 @@
-A simple 3D moluecular dynamics simulation based off Lennard-Jones potential between any two arbitrary atoms. 
+A simple 3D moluecular dynamics simulation based off Lennard-Jones potential 
+between any two arbitrary atoms. 
 
-To run: The md function takes three inputs- number of atoms, size of simulation box, and average kinetic energy. You'll probably want to keep the number of atoms between 2 and 36, the size between 1 and 6, and the average kinetic energy between 0.1 and 0.8. In the MATLAB command line you'd input something like obj = md(36, 6, 0.4). Then you call the draw function to actually see the atoms move around. So the next command will be draw(obj).
+To run: The md function takes three inputs- number of atoms, size of simulation box,
+and average kinetic energy. You'll probably want to keep the number of atoms
+between 2 and 36, the size between 1 and 6, and the average kinetic energy
+between 0.1 and 0.8. In the MATLAB command line you'd input something like
+obj = md(36, 6, 0.4). Then you call the draw function to actually see the 
+atoms move around. So the next command will be draw(obj). The calculations 
+can be very expensive for your memory, so I don't recommend going much larger
+than 36 atoms. 
